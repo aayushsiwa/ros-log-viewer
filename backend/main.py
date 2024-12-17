@@ -1,24 +1,31 @@
 from fastapi import FastAPI, File, UploadFile, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import re
 from typing import List, Optional
+import os
+import re
 
 app = FastAPI()
 
+# Enable CORS (use specific origins in production for security)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins; change to specific origins in production
+    allow_origins=["*"],  # Allows all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Ensure the 'data' directory exists
+DATA_DIR = "./data"
+if not os.path.exists(DATA_DIR):
+    os.makedirs(DATA_DIR)
 
+# Global list to temporarily store parsed logs
+logs = []
 
-# Parse log file
+# Function to parse a single log entry
 def parse_log(log_entry: str):
-    import re
     pattern = r"\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)"
     match = re.match(pattern, log_entry)
     if match:
@@ -31,30 +38,42 @@ def parse_log(log_entry: str):
         }
     return None
 
-# Temporary storage for logs
-with open("./data/fake_ros_logs.log","r") as f:
-    content=f.readlines();
-    logs=[]
-    for i in content:
-      logs.append(parse_log(i))
-      
-
+# Route to upload and parse a log file
 @app.post("/upload/")
 async def upload_file(file: UploadFile = File(...)):
     global logs
-    content = await file.readlines()
-    logs = parse_log(content.decode('utf-8'))
-    return {"message": "File uploaded and parsed successfully"}
+    file_location = os.path.join(DATA_DIR, file.filename)
 
+    # Save the uploaded file to the 'data' directory
+    with open(file_location, "wb") as buffer:
+        buffer.write(await file.read())
+
+    # Parse the file and reset the logs list
+    logs = []
+    with open(file_location, "r") as f:
+        for line in f:
+            parsed_log = parse_log(line)
+            if parsed_log:
+                logs.append(parsed_log)
+
+    return {"message": f"File '{file.filename}' uploaded and parsed successfully"}
+
+# Route to fetch logs with optional filters
 @app.get("/logs/")
 def get_logs(
-    severity: Optional[str] = Query(None),
-    keyword: Optional[str] = Query(None),
+    severity: Optional[str] = Query(None, description="Filter logs by severity level"),
+    keyword: Optional[str] = Query(None, description="Search logs by keyword in message"),
 ):
-    global logs
     filtered_logs = logs
+
+    # Apply severity filter
     if severity:
-        filtered_logs = [log for log in logs if log["level"] == severity]
+        filtered_logs = [log for log in filtered_logs if log["severity"] == severity]
+
+    # Apply keyword search filter
     if keyword:
-        filtered_logs = [log for log in filtered_logs if keyword in log["message"]]
+        filtered_logs = [
+            log for log in filtered_logs if keyword.lower() in log["message"].lower()
+        ]
+
     return JSONResponse(filtered_logs)

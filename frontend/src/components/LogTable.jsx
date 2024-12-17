@@ -1,20 +1,13 @@
-import React, { useEffect } from "react";
+import React from "react";
 
-const LogTable = ({ logs, filter, onFilterChange, fetchLogs }) => {
+const LogTable = ({ logs, filter, onFilterChange }) => {
     const handleSeverityChange = (e) => {
         onFilterChange({ ...filter, severity: e.target.value });
-        fetchLogs();
     };
 
     const handleKeywordChange = (e) => {
         onFilterChange({ ...filter, keyword: e.target.value });
-        fetchLogs();
     };
-
-    useEffect(() => {
-        console.log("Logs updated:", logs);
-        // console.log(logs[0]);
-    }, [logs]);
 
     return (
         <div>
@@ -33,6 +26,7 @@ const LogTable = ({ logs, filter, onFilterChange, fetchLogs }) => {
                     type="text"
                     value={filter.keyword}
                     onChange={handleKeywordChange}
+                    placeholder="Search logs..."
                 />
             </div>
             <table>
@@ -45,22 +39,21 @@ const LogTable = ({ logs, filter, onFilterChange, fetchLogs }) => {
                     </tr>
                 </thead>
                 <tbody>
-                    {logs.map((log,idx) => (
-                        // {{console.log(log)}}
+                    {logs.map((log, idx) => (
                         <tr
                             key={idx}
-                            style={
-                                {
-                                    backgroundColor:
-                                    log.severity === 'ERROR' ? 'red' : log.severity === 'WARN' ? 'yellow' : 'transparent',
-                                }
-                            }
+                            style={{
+                                backgroundColor:
+                                    log.severity === "ERROR"
+                                        ? "red"
+                                        : log.severity === "WARN"
+                                        ? "yellow"
+                                        : "transparent",
+                            }}
                         >
                             <td>{log.timestamp}</td>
-                            <td>{log.severity}</td>{" "}
-                            {/* Ensure 'log.level' matches the data */}
-                            <td>{log.node_name}</td>{" "}
-                            {/* Ensure 'log.node_name' matches the data */}
+                            <td>{log.severity}</td>
+                            <td>{log.node_name}</td>
                             <td>{log.message}</td>
                         </tr>
                     ))}
