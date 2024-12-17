@@ -119,3 +119,8 @@ def download_logs(
         media_type="text/plain",
         filename="filtered_logs.txt",
     )
+
+
+@app.get("/")
+def hello():
+    return "Hi"
