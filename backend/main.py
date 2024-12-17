@@ -1,5 +1,5 @@
 from fastapi import FastAPI, File, UploadFile, Query
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import os
@@ -24,6 +24,7 @@ if not os.path.exists(DATA_DIR):
 # Global list to temporarily store parsed logs
 logs = []
 
+
 # Function to parse a single log entry
 def parse_log(log_entry: str):
     pattern = r"\[(.*?)\] \[(.*?)\] \[(.*?)\] (.*)"
@@ -37,6 +38,7 @@ def parse_log(log_entry: str):
             "message": message,
         }
     return None
+
 
 # Route to upload and parse a log file
 @app.post("/upload/")
@@ -58,11 +60,40 @@ async def upload_file(file: UploadFile = File(...)):
 
     return {"message": f"File '{file.filename}' uploaded and parsed successfully"}
 
+
 # Route to fetch logs with optional filters
 @app.get("/logs/")
 def get_logs(
     severity: Optional[str] = Query(None, description="Filter logs by severity level"),
-    keyword: Optional[str] = Query(None, description="Search logs by keyword in message"),
+    keyword: Optional[str] = Query(
+        None, description="Search logs by keyword in message"
+    ),
+):
+    filtered_logs = logs
+
+    # Apply severity filter
+    if severity:
+        filtered_logs = [log for log in filtered_logs if log["severity"] == severity]
+
+    # Apply keyword search filter
+    if keyword:
+        filtered_logs = [
+            log
+            for log in filtered_logs
+            if keyword.lower()
+            in f"{log['timestamp']} {log['severity']} {log['node_name']} {log['message']}".lower()
+        ]
+
+    return JSONResponse(filtered_logs)
+
+
+# Route to download filtered logs as a file
+@app.get("/download/")
+def download_logs(
+    severity: Optional[str] = Query(None, description="Filter logs by severity level"),
+    keyword: Optional[str] = Query(
+        None, description="Search logs by keyword in message"
+    ),
 ):
     filtered_logs = logs
 
@@ -76,4 +107,15 @@ def get_logs(
             log for log in filtered_logs if keyword.lower() in log["message"].lower()
         ]
 
-    return JSONResponse(filtered_logs)
+    # Generate a temporary file to store filtered logs
+    download_file_path = os.path.join(DATA_DIR, "filtered_logs.txt")
+    with open(download_file_path, "w") as f:
+        for log in filtered_logs:
+            log_line = f"[{log['timestamp']}] [{log['severity']}] [{log['node_name']}] {log['message']}\n"
+            f.write(log_line)
+
+    return FileResponse(
+        path=download_file_path,
+        media_type="text/plain",
+        filename="filtered_logs.txt",
+    )

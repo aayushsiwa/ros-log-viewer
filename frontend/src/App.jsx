@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import UploadFile from "./components/UploadFile";
 import LogTable from "./components/LogTable";
+import "./App.css";
+import NavBar from "./components/NavBar";
 
 function App() {
     const [logs, setLogs] = useState([]);
-    const [filter, setFilter] = useState({ severity: "", keyword: "" }); // State for filtering
+    const [filter, setFilter] = useState({ severity: "", keyword: "" });
 
     const fetchLogs = async () => {
         try {
@@ -13,28 +15,69 @@ function App() {
             if (filter.severity) params.severity = filter.severity;
             if (filter.keyword) params.keyword = filter.keyword;
 
-            const response = await axios.get("http://127.0.0.1:8000/logs/", { params });
+            const response = await axios.get("http://127.0.0.1:8000/logs/", {
+                params,
+            });
             setLogs(response.data);
         } catch (error) {
             console.error("Failed to fetch logs:", error);
         }
     };
 
+    const handleUpload = () => {
+        document.getElementById("fileInput").click(); // Trigger file input click
+    };
+
+    const handleDownload = async () => {
+        try {
+            const params = {};
+            if (filter.severity) params.severity = filter.severity;
+            if (filter.keyword) params.keyword = filter.keyword;
+
+            const response = await axios.get(
+                "http://127.0.0.1:8000/download/",
+                {
+                    params,
+                    responseType: "blob",
+                }
+            );
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", "filtered_logs.txt");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            alert("Filtered logs downloaded successfully!");
+        } catch (error) {
+            console.error("Failed to download logs:", error);
+            alert("Failed to download logs. Please try again.");
+        }
+    };
+
     useEffect(() => {
-        fetchLogs(); // Fetch logs when the component mounts or filter changes
+        fetchLogs();
     }, [filter]);
 
     return (
-        <div>
-            <h1>ROS Log Viewer</h1>
-            <UploadFile onUpload={fetchLogs}/>
-            <LogTable
-                logs={logs}
+        <>
+            {/* <h1>ROS Log Viewer</h1> */}
+            <NavBar
                 filter={filter}
                 onFilterChange={setFilter}
-                fetchLogs={fetchLogs}
+                onUpload={handleUpload}
+                onDownload={handleDownload}
             />
-        </div>
+            <UploadFile onUpload={fetchLogs} />
+            <LogTable
+                logs={logs}
+                // filter={filter}
+                // onFilterChange={setFilter}
+                // fetchLogs={fetchLogs}
+            />
+        </>
     );
 }
 

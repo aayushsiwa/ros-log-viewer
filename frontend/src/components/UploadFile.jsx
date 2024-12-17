@@ -5,10 +5,7 @@ const UploadFile = ({ onUpload }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [uploadStatus, setUploadStatus] = useState("");
 
-    const handleFileChange = (e) => {
-        setSelectedFile(e.target.files[0]);
-    };
-
+    
     const handleUpload = async () => {
         if (!selectedFile) {
             setUploadStatus("Please select a file to upload.");
@@ -36,10 +33,16 @@ const UploadFile = ({ onUpload }) => {
         }
     };
 
+    const handleFileChange = (e) => {
+      setSelectedFile(e.target.files[0]);
+      handleUpload()
+  };
+
+
     return (
         <div>
-            <input type="file" onChange={handleFileChange} />
-            <button onClick={handleUpload}>Upload</button>
+            <input type="file" id="fileInput" onChange={handleFileChange} className="hidden"/>
+            {/* <button  onClick={handleUpload}>Upload</button> */}
             {uploadStatus && <p>{uploadStatus}</p>}
         </div>
     );
