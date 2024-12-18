@@ -15,7 +15,7 @@ function App() {
             if (filter.severity) params.severity = filter.severity;
             if (filter.keyword) params.keyword = filter.keyword;
 
-            const response = await axios.get("http://127.0.0.1:8000/logs/", {
+            const response = await axios.get(`${import.meta.env.VITE_API_URL}/logs/`, {
                 params,
             });
             setLogs(response.data);
@@ -35,13 +35,12 @@ function App() {
             if (filter.keyword) params.keyword = filter.keyword;
 
             const response = await axios.get(
-                "http://127.0.0.1:8000/download/",
+                `${import.meta.env.VITE_API_URL}/download/`,
                 {
                     params,
                     responseType: "blob",
                 }
             );
-
             const url = window.URL.createObjectURL(new Blob([response.data]));
             const link = document.createElement("a");
             link.href = url;
@@ -59,6 +58,8 @@ function App() {
 
     useEffect(() => {
         fetchLogs();
+        console.log(import.meta.env.VITE_API_URL) 
+
     }, [filter]);
 
     return (
@@ -67,10 +68,11 @@ function App() {
             <NavBar
                 filter={filter}
                 onFilterChange={setFilter}
-                onUpload={handleUpload}
+                // onUpload={handleUpload}
+                onUpload={fetchLogs}
                 onDownload={handleDownload}
             />
-            <UploadFile onUpload={fetchLogs} />
+            {/* <UploadFile onUpload={fetchLogs} /> */}
             <LogTable
                 logs={logs}
                 // filter={filter}

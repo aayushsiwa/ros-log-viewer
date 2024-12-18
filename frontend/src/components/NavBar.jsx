@@ -1,7 +1,7 @@
 import React from "react";
 import download from "../../public/download.svg";
-import upload from "../../public/upload.svg";
 import search from "../../public/search.svg";
+import UploadFile from "./UploadFile";
 
 function NavBar({ filter, onFilterChange, onUpload, onDownload }) {
     // Handle severity filter changes
@@ -51,14 +51,14 @@ function NavBar({ filter, onFilterChange, onUpload, onDownload }) {
 
             {/* Upload and Download Buttons */}
             <div className="flex gap-4 items-center">
-                <button
+                {/* <button
                     onClick={onUpload}
                     className="flex gap-2 items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
                 >
                     Upload
                     <img src={upload} alt="Upload" />
-                </button>
-
+                </button> */}
+                <UploadFile onUpload={onUpload}/>
                 <button
                     onClick={onDownload}
                     className="flex gap-2 items-center bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md"

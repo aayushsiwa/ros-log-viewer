@@ -1,14 +1,14 @@
 import React, { useState } from "react";
+import upload from "../../public/upload.svg";
 import axios from "axios";
 
 const UploadFile = ({ onUpload }) => {
     const [selectedFile, setSelectedFile] = useState(null);
-    const [uploadStatus, setUploadStatus] = useState("");
+    const [uploadStatus, setUploadStatus] = useState("Upload");
 
-    
     const handleUpload = async () => {
         if (!selectedFile) {
-            setUploadStatus("Please select a file to upload.");
+            // setUploadStatus("Select");
             return;
         }
 
@@ -17,33 +17,46 @@ const UploadFile = ({ onUpload }) => {
 
         try {
             setUploadStatus("Uploading...");
-            const response = await axios.post("http://127.0.0.1:8000/upload/", formData, {
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                },
-            });
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/upload/`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
 
             if (response.status === 200) {
-                setUploadStatus("File uploaded successfully!");
+                setUploadStatus("Uploaded");
                 onUpload(); // Trigger any action needed after successful upload
             }
         } catch (error) {
             console.error("Failed to upload file:", error);
-            setUploadStatus("Failed to upload file. Please try again.");
+            setUploadStatus("Failed");
         }
     };
 
     const handleFileChange = (e) => {
-      setSelectedFile(e.target.files[0]);
-      handleUpload()
-  };
-
+        setSelectedFile(e.target.files[0]);
+        handleUpload();
+    };
 
     return (
-        <div>
-            <input type="file" id="fileInput" onChange={handleFileChange} className="hidden"/>
-            {/* <button  onClick={handleUpload}>Upload</button> */}
-            {uploadStatus && <p>{uploadStatus}</p>}
+        <div className="flex items-center">
+            <input
+                type="file"
+                id="fileInput"
+                onChange={handleFileChange}
+                className="bg-blue-400 p-1 rounded-md me-1 text-blue-100"
+            />
+            <button
+                onClick={handleUpload}
+                className="flex justify-between gap-2 items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md w-36"
+            >
+                {uploadStatus && <p>{uploadStatus}</p>}
+                <img src={upload} alt="Upload" />
+            </button>
         </div>
     );
 };
